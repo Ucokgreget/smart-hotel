@@ -1,0 +1,210 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Palette: colors.csv row 104, Booking and Appointment App. Exact hex values.
+   Two documented derivations live here and in DESIGN.md:
+   --surface-night = Foreground #0F172A blended 15% toward Primary #0284C7.
+   --muted-foreground = 50% mix of the row's Muted Foreground #64748B with
+   Foreground #0F172A, because the row's own value is only 4.20:1 on the row's
+   own Background and fails AA for 14px text. The mix reaches 8.98:1. */
+:root {
+  --background: #f0f9ff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #0284c7;
+  --primary-foreground: #ffffff;
+  --secondary: #0ea5e9;
+  --secondary-foreground: #ffffff;
+  --muted: #eff7fb;
+  --muted-foreground: #394558;
+  --accent: #059669;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --border: #e0f0f8;
+  --input: #e0f0f8;
+  --ring: #0284c7;
+  --chart-1: #0284c7;
+  --chart-2: #0ea5e9;
+  --chart-3: #059669;
+  --chart-4: #64748b;
+  --chart-5: #0f172a;
+  --radius: 0.625rem;
+  --surface-night: #0d2742;
+  --sidebar: #eff7fb;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #0284c7;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e0f0f8;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e0f0f8;
+  --sidebar-ring: #0284c7;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f0f9ff;
+  --card: #0d2742;
+  --card-foreground: #f0f9ff;
+  --popover: #0d2742;
+  --popover-foreground: #f0f9ff;
+  --primary: #0ea5e9;
+  --primary-foreground: #0f172a;
+  --secondary: #0284c7;
+  --secondary-foreground: #ffffff;
+  --muted: #0d2742;
+  --muted-foreground: #94a3b8;
+  --accent: #059669;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --border: #1f3452;
+  --input: #1f3452;
+  --ring: #0ea5e9;
+  --chart-1: #0ea5e9;
+  --chart-2: #0284c7;
+  --chart-3: #059669;
+  --chart-4: #64748b;
+  --chart-5: #f0f9ff;
+  --surface-night: #0d2742;
+  --sidebar: #0d2742;
+  --sidebar-foreground: #f0f9ff;
+  --sidebar-primary: #0ea5e9;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #1f3452;
+  --sidebar-accent-foreground: #f0f9ff;
+  --sidebar-border: #1f3452;
+  --sidebar-ring: #0ea5e9;
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-surface-night: var(--surface-night);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Scroll cue. A slow non-bouncy drift, and only when motion is welcome. */
+@keyframes scroll-cue {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(4px);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-right-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-scroll-cue {
+    animation: scroll-cue 2.4s ease-in-out infinite;
+  }
+
+  .animate-element {
+    animation: fade-slide-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-slide-right {
+    animation: slide-right-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-delay-100 {
+    animation-delay: 60ms;
+  }
+  .animate-delay-200 {
+    animation-delay: 120ms;
+  }
+  .animate-delay-300 {
+    animation-delay: 180ms;
+  }
+  .animate-delay-400 {
+    animation-delay: 240ms;
+  }
+  .animate-delay-500 {
+    animation-delay: 300ms;
+  }
+  .animate-delay-600 {
+    animation-delay: 360ms;
+  }
+}
