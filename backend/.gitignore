@@ -1,0 +1,10 @@
+# deps
+node_modules/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# prisma generated client
+src/generated/

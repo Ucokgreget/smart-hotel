@@ -1,0 +1,192 @@
+// Prisma schema for Smart Hotel.
+//
+// Every model here maps to a table in the proposal's section 5, "Data yang
+// Digunakan dan Dipertukarkan". Column comments name the proposal field so the
+// data flow stays traceable from the PDF to the database.
+//
+// Money is stored as Int in rupiah, matching the proposal's example payloads
+// (`price_per_night: 500000`, `total_amount: 1000000`).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoomStatus {
+  // "available" is the value used in the proposal's room payload.
+  AVAILABLE
+  // Operational counterpart. Not attested by the proposal; see EVIDENCE.md.
+  OUT_OF_SERVICE
+}
+
+enum ReservationStatus {
+  // "PENDING" is the value returned by POST /api/reservations in the proposal.
+  PENDING
+  // "CONFIRMED" is reached only after the gateway reports a paid payment.
+  CONFIRMED
+  // Not attested by the proposal; kept for operational completeness.
+  CANCELLED
+}
+
+enum PaymentStatus {
+  // PENDING, PAID and FAILED are the three statuses named in the proposal.
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PaymentMethod {
+  // QRIS is the only method named in the proposal (section 11.3).
+  // Add further values here as the gateway is extended.
+  QRIS
+}
+
+enum Role {
+  // A booking guest. This is the only role the proposal describes.
+  TAMU
+  // Hotel staff who settle payments and read reservations.
+  ADMIN
+}
+
+/// An account that can sign in.
+///
+/// The proposal calls this "tamu" and lists name, email, phone, and password in
+/// its business process. It is named Account rather than Guest because it now
+/// holds the staff role too, and an administrator is not a guest. The guest data
+/// the proposal describes is unchanged: name, email, phone, passwordHash.
+model Account {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  phone        String
+  passwordHash String
+
+  role Role @default(TAMU)
+
+  /// Incremented whenever the role changes. A token issued before the change
+  /// carries the old version and stops working on the next request, instead of
+  /// staying valid for the rest of its 12 hour life.
+  tokenVersion Int @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  reservations Reservation[]
+
+  @@map("account")
+}
+
+/// Hotel room inventory. Managed entirely by the hotel system and never sent
+/// to the gateway.
+model Room {
+  id   String @id
+  /// Nomor kamar, unique and separate from the room_id used in payloads.
+  number      String     @unique
+  /// Tipe kamar, for example Deluxe or Suite.
+  type        String     @map("room_type")
+  /// Harga per malam in rupiah.
+  pricePerNight Int      @map("price_per_night")
+  status      RoomStatus @default(AVAILABLE)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  reservations Reservation[]
+
+  @@index([status])
+  @@map("room")
+}
+
+/// One booking. Created before any payment exists, so it starts as PENDING and
+/// only reaches CONFIRMED through the gateway callback.
+model Reservation {
+  id String @id
+
+  accountId String @map("account_id")
+  roomId    String @map("room_id")
+
+  checkIn  DateTime @map("check_in") @db.Date
+  checkOut DateTime @map("check_out") @db.Date
+  /// Jumlah malam, derived at creation time and never trusted from a request.
+  nights Int
+
+  /// Total pembayaran in rupiah, computed from room price and nights.
+  totalAmount Int @map("total_amount")
+
+  status    ReservationStatus @default(PENDING)
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  room    Room    @relation(fields: [roomId], references: [id], onDelete: Restrict)
+
+  transaction Transaction?
+  payment     Payment?
+
+  /// Supports the availability query: rooms with no overlapping live booking.
+  @@index([roomId, checkIn, checkOut])
+  @@index([accountId, createdAt])
+  @@index([status])
+  @@map("reservation")
+}
+
+/// The outgoing payment request. The proposal sends "ID transaksi dan ID
+/// reservasi" plus total and method to the gateway.
+model Transaction {
+  id            String @id
+  reservationId String @unique @map("reservation_id")
+
+  amount Int
+  method PaymentMethod
+
+  /// Reference the gateway returned for this transaction, kept for support.
+  gatewayReference String? @map("gateway_reference")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  payment     Payment?
+
+  @@map("transaction")
+}
+
+/// The incoming payment record. Holds everything the gateway sends back:
+/// payment URL, payment status, and payment time.
+model Payment {
+  id            String @id
+  transactionId String @unique @map("transaction_id")
+  /// One transaction per reservation and one payment per transaction, so the
+  /// reservation link is unique too. See Transaction.reservationId.
+  reservationId String @unique @map("reservation_id")
+
+  amount Int
+  /// Tautan pembayaran yang diberikan gateway.
+  url    String? @map("payment_url")
+
+  status PaymentStatus @default(PENDING)
+
+  /// Waktu pembayaran, null until the gateway reports a terminal status.
+  paidAt DateTime? @map("paid_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+
+  @@index([reservationId])
+  @@index([status])
+  @@map("payment")
+}
+
+/// Monotonic counters that produce the human readable identifiers used
+/// throughout the proposal: RSV001, TRX001, PAY001.
+model Counter {
+  key   String @id
+  value Int    @default(0)
+
+  @@map("counter")
+}

@@ -1,0 +1,25 @@
+{
+  "name": "backend",
+  "scripts": {
+    "dev": "bun run --hot src/server.ts",
+    "start": "bun run src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "hono": "^4.13.13",
+    "qris-dinamis": "file:../qris-dinamis"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "dotenv": "^18.0.5",
+    "prisma": "^7.10.0"
+  }
+}
